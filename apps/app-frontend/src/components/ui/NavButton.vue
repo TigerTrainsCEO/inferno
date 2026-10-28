@@ -10,10 +10,11 @@
 			'subpage-active': isSubpage && isSubpage(route),
 			disabled: disabled,
 		}"
-		class="nav-button border-none text-primary cursor-pointer w-12 rounded-full h-12 flex items-center justify-center text-2xl transition-all bg-transparent hover:bg-button-bg hover:text-contrast"
+		class="nav-button border-none text-primary cursor-pointer w-14 min-h-[3.25rem] rounded-md flex flex-col gap-0.5 items-center justify-center text-2xl transition-all bg-transparent hover:bg-button-bg hover:text-contrast"
 		@click="onClick"
 	>
 		<slot />
+		<span v-if="label" class="nav-label">{{ label }}</span>
 	</component>
 </template>
 
@@ -33,6 +34,8 @@ const props = withDefaults(
 		isSubpage?: RouteFunction
 		highlightOverride?: boolean
 		disabled?: boolean
+		/** Optional tiny caption under the icon (Inferno nav style). */
+		label?: string
 	}>(),
 	{
 		disabled: false,
@@ -61,14 +64,46 @@ defineOptions({
 		position: absolute;
 		inset: 0;
 		background-color: var(--color-button-bg-selected);
-		border-radius: 50%;
+		border-radius: var(--radius-md);
 		opacity: 0;
-		scale: 0.4;
+		scale: 0.6;
 		z-index: -1;
 		transition:
 			opacity 0.25s var(--ease-out-expo),
 			scale 0.25s var(--ease-out-expo);
 	}
+}
+
+.nav-label {
+	font-family: var(--font-display);
+	font-size: 0.625rem;
+	line-height: 1;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.85;
+}
+
+.nav-button::after {
+	content: '';
+	position: absolute;
+	left: -0.5rem;
+	top: 22%;
+	bottom: 22%;
+	width: 3px;
+	border-radius: 0 3px 3px 0;
+	background: var(--color-brand);
+	box-shadow: 0 0 12px var(--color-brand-shadow);
+	opacity: 0;
+	scale: 1 0.4;
+	transition:
+		opacity 0.2s var(--ease-out-expo),
+		scale 0.2s var(--ease-out-expo);
+}
+
+.router-link-active::after {
+	opacity: 1;
+	scale: 1 1;
 }
 
 .router-link-active,

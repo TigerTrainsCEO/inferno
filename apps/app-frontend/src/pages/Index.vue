@@ -49,7 +49,7 @@ useRootBreadcrumb({
 	slot: 'root',
 	id: 'home',
 	label: formatMessage(messages.home),
-	to: '/',
+	to: '/library',
 	visual: { type: 'icon', component: PlayIcon },
 })
 

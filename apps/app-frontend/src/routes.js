@@ -8,6 +8,11 @@ export default new createRouter({
 		{
 			path: '/',
 			name: 'Home',
+			component: () => import('@/pages/Arena.vue'),
+		},
+		{
+			path: '/library',
+			name: 'Library',
 			component: () => import('@/pages/Index.vue'),
 			meta: {
 				manualScroll: true,

@@ -12,6 +12,9 @@
 		"copyright": "",
 		"targets": "all",
 		"externalBin": [],
+		"resources": {
+			"resources/inferno/*.jar": "inferno/"
+		},
 		"icon": ["icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
 		"windows": {
 			"nsis": {
@@ -55,10 +58,10 @@
 			}
 		]
 	},
-	"productName": "Modrinth App",
+	"productName": "Inferno Launcher",
 	"version": "../app-frontend/package.json",
-	"mainBinaryName": "Modrinth App",
-	"identifier": "ModrinthApp",
+	"mainBinaryName": "InfernoLauncher",
+	"identifier": "InfernoLauncher",
 	"plugins": {
 		"deep-link": {
 			"desktop": {
@@ -77,7 +80,7 @@
 				"fullscreen": false,
 				"height": 800,
 				"resizable": true,
-				"title": "Modrinth App",
+				"title": "Inferno Launcher",
 				"label": "main",
 				"width": 1280,
 				"minHeight": 700,

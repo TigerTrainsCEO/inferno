@@ -5,12 +5,12 @@ import {
 	ArrowLeftRightIcon,
 	CompassIcon,
 	ImageIcon,
+	LibraryIcon,
 	LogInIcon,
 	LogOutIcon,
 	PlayIcon,
 	PlusIcon,
 	RefreshCwIcon,
-	ServerStackIcon,
 	SettingsIcon,
 	ShirtIcon,
 	SpinnerIcon,
@@ -2015,18 +2015,28 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			class="app-grid-navbar bg-bg-raised flex flex-col p-[0.5rem] pt-0 gap-[0.25rem] w-[--left-bar-width]"
 		>
 			<NavButton
-				v-tooltip.right="formatMessage(messages.home)"
+				v-tooltip.right="'Arena - PvP profiles'"
+				label="Arena"
 				to="/"
 				:is-primary="(route) => route.path === '/'"
+			>
+				<PlayIcon />
+			</NavButton>
+			<NavButton
+				v-tooltip.right="formatMessage(messages.home)"
+				label="Library"
+				to="/library"
+				:is-primary="(route) => route.path === '/library'"
 				:is-subpage="
 					() =>
 						(route.path.startsWith('/browse') || route.path.startsWith('/project')) && route.query.i
 				"
 			>
-				<PlayIcon class="ml-0.5" />
+				<LibraryIcon />
 			</NavButton>
 			<NavButton
 				v-tooltip.right="formatMessage(commonMessages.discoverContentLabel)"
+				label="Mods"
 				to="/browse/modpack"
 				:is-primary="() => route.path.startsWith('/browse') && !route.query.i && !route.query.sid"
 				:is-subpage="
@@ -2038,6 +2048,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<NavButton
 				v-if="appSettings.showSkinSelectorInSidebar"
 				v-tooltip.right="formatMessage(appMessages.skinSelectorLabel)"
+				label="Skins"
 				to="/skins"
 			>
 				<ShirtIcon />
@@ -2045,21 +2056,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<NavButton
 				v-if="globalSyncedOptionsQuery.data.value?.screenshots"
 				v-tooltip.right="formatMessage(messages.screenshots)"
+				label="Shots"
 				to="/screenshots"
 			>
 				<ImageIcon />
-			</NavButton>
-			<NavButton
-				v-tooltip.right="formatMessage(messages.modrinthHosting)"
-				to="/hosting/manage"
-				:is-primary="(r) => r.path === '/hosting/manage' || r.path === '/hosting/manage/'"
-				:is-subpage="
-					(r) =>
-						(r.path.startsWith('/hosting/manage/') && r.path !== '/hosting/manage/') ||
-						((r.path.startsWith('/browse') || r.path.startsWith('/project')) && r.query.sid)
-				"
-			>
-				<ServerStackIcon />
 			</NavButton>
 			<suspense>
 				<QuickInstanceSwitcher>
@@ -2074,6 +2074,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			</suspense>
 			<NavButton
 				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
+				label="Setup"
 				:to="settingsActions.openSettings"
 			>
 				<SettingsIcon />
@@ -2283,7 +2284,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 .app-grid-layout,
 .app-contents {
 	--top-bar-height: 3rem;
-	--left-bar-width: 4rem;
+	--left-bar-width: 4.75rem;
 	--right-bar-width: 300px;
 }
 

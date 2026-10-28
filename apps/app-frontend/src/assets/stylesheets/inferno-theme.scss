@@ -1,0 +1,100 @@
+/*
+ * Inferno Launcher theme layer.
+ * Loaded AFTER the shared Modrinth design tokens and overrides only what gives the app its own
+ * identity: warm charcoal surfaces, an ember accent instead of green, and sharper, flatter shapes.
+ */
+
+html {
+	/* Sharper corners than the stock rounded UI */
+	--radius-xs: 2px;
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 10px;
+
+	--font-display: 'Bahnschrift', 'Segoe UI Variable Display', 'Arial Narrow', 'Roboto Condensed',
+		system-ui, sans-serif;
+	--color-focus-ring: #ffb347;
+	--inferno-glow: 0 0 0 1px rgba(255, 90, 31, 0.35), 0 8px 28px -8px rgba(255, 90, 31, 0.45);
+}
+
+.light-mode,
+.light {
+	--surface-1: #efe8e2;
+	--surface-1-5: #f1ebe5;
+	--surface-2: #f6f1ec;
+	--surface-2-5: #f0e9e3;
+	--surface-3: #faf6f2;
+	--surface-4: #ffffff;
+	--surface-5: #ddd2ca;
+
+	--color-text-primary: #1d1411;
+	--color-text-default: #3a2d27;
+	--color-text-tertiary: #6b5a50;
+
+	--color-brand: #c93c08;
+	--color-brand-highlight: rgba(201, 60, 8, 0.16);
+	--color-brand-shadow: rgba(201, 60, 8, 0.6);
+	--color-button-bg-selected: var(--color-brand);
+	--loading-bar-gradient: linear-gradient(to right, #c93c08 0%, #ff8a3d 100%);
+}
+
+.dark-mode,
+.dark,
+:root[data-theme='dark'] {
+	--surface-1: #110e0d;
+	--surface-1-5: #141110;
+	--surface-2: #191514;
+	--surface-2-5: #1e1917;
+	--surface-3: #231d1b;
+	--surface-4: #302824;
+	--surface-5: #41352f;
+
+	--color-text-primary: #fff6f0;
+	--color-text-default: #cdbdb3;
+	--color-text-tertiary: #a3938a;
+
+	--color-brand: #ff5a1f;
+	--color-brand-highlight: rgba(255, 90, 31, 0.2);
+	--color-brand-shadow: rgba(255, 90, 31, 0.6);
+	--color-button-bg-selected: var(--color-brand-highlight);
+	--color-button-text-selected: #ff8a52;
+	--color-gradient-button-bg: linear-gradient(180deg, #34292a 0%, #2b2220 100%);
+	--loading-bar-gradient: linear-gradient(to right, #ff5a1f 0%, #ffb347 100%);
+
+	--brand-gradient-bg: linear-gradient(0deg, rgba(60, 20, 8, 0.25) 0%, rgba(255, 90, 31, 0.08) 100%);
+	--brand-gradient-strong-bg: linear-gradient(270deg, #120907 10%, #26100a 100%);
+	--brand-gradient-border: rgba(255, 150, 90, 0.1);
+	--splash-tint-top: rgba(255, 90, 31, 0.22);
+	--splash-tint-bottom: rgba(40, 12, 6, 0.5);
+	--splash-overlay: rgba(17, 14, 13, 0.7);
+}
+
+.oled-mode {
+	--surface-1: #000000;
+	--surface-1-5: #060404;
+	--surface-2: #0b0807;
+	--surface-2-5: #100c0a;
+	--surface-3: #14100e;
+	--surface-4: #211a17;
+	--surface-5: #2c231f;
+
+	--color-text-primary: #fff6f0;
+	--color-text-default: #cdbdb3;
+	--color-text-tertiary: #a3938a;
+
+	--color-brand: #ff5a1f;
+	--color-brand-highlight: rgba(255, 90, 31, 0.2);
+	--color-brand-shadow: rgba(255, 90, 31, 0.6);
+	--color-button-bg-selected: var(--color-brand-highlight);
+	--color-button-text-selected: #ff8a52;
+	--loading-bar-gradient: linear-gradient(to right, #ff5a1f 0%, #ffb347 100%);
+	--color-gradient-button-bg: linear-gradient(180deg, #211a17 0%, #2c231f 100%);
+}
+
+h1,
+h2,
+.inferno-display {
+	font-family: var(--font-display);
+	letter-spacing: 0.01em;
+}
