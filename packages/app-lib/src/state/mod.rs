@@ -76,6 +76,7 @@ mod mr_auth;
 
 pub use self::mr_auth::*;
 
+#[allow(dead_code)]
 mod legacy_converter;
 
 pub mod attached_world_data;
@@ -303,7 +304,7 @@ impl State {
             content_store::ContentStore::lock_process(&settings_dir).await?;
         let pool = db::connect(&app_identifier).await?;
 
-        legacy_converter::migrate_legacy_data(&pool).await?;
+        // Inferno Launcher is a separate app and must never import or move another launcher's data.
 
         tracing::info!("Fetching app settings");
         let mut settings = Settings::get(&pool).await?;
