@@ -51,6 +51,13 @@ public final class Ui {
 		c.fill(x + w - 1, y + 1, x + w, y + h - 1, color);
 	}
 
+	public static void border(DrawContext c, int x, int y, int w, int h, int color) {
+		c.fill(x, y, x + w, y + 1, color);
+		c.fill(x, y + h - 1, x + w, y + h, color);
+		c.fill(x, y + 1, x + 1, y + h - 1, color);
+		c.fill(x + w - 1, y + 1, x + w, y + h - 1, color);
+	}
+
 	public static void text(DrawContext c, String s, int x, int y, int color) {
 		c.drawText(font(), s, x, y, color, false);
 	}
