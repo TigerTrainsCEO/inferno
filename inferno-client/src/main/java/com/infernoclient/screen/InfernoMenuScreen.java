@@ -94,7 +94,7 @@ public final class InfernoMenuScreen extends Screen {
 		int px = (width - pw) / 2;
 		int py = (height - ph) / 2;
 		Ui.round(ctx, px, py, pw, ph, Theme.PANEL);
-		ctx.drawBorder(px, py, pw, ph, Theme.LINE);
+		Ui.border(ctx, px, py, pw, ph, Theme.LINE);
 
 		int sideW = 124;
 		Ui.round(ctx, px + 1, py + 1, sideW, ph - 2, 0xFF110D0B);
@@ -168,7 +168,7 @@ public final class InfernoMenuScreen extends Screen {
 			boolean over = Ui.hover(mx, my, cx, cy, cardW, cardH) && Ui.hover(mx, my, x, gy, gridW, gh);
 			boolean sel = m == selected;
 			Ui.round(ctx, cx, cy, cardW, cardH, over || sel ? Theme.CARD_HOVER : Theme.CARD);
-			if (sel) ctx.drawBorder(cx, cy, cardW, cardH, Theme.accent());
+			if (sel) Ui.border(ctx, cx, cy, cardW, cardH, Theme.accent());
 			boolean on = m.get().getAsBoolean();
 			ctx.fill(cx + 1, cy + cardH - 2, cx + cardW - 1, cy + cardH - 1, on ? Theme.accent() : Theme.LINE);
 			Ui.text(ctx, m.name(), cx + 8, cy + 8, Theme.TEXT);
@@ -273,7 +273,7 @@ public final class InfernoMenuScreen extends Screen {
 		for (int color : ACCENTS) {
 			boolean on = (cfg.hud.accentColor & 0xFFFFFF) == color;
 			Ui.round(ctx, bx, ly + 14, 24, 24, 0xFF000000 | color);
-			if (on) ctx.drawBorder(bx - 2, ly + 12, 28, 28, 0xFFFFFFFF);
+			if (on) Ui.border(ctx, bx - 2, ly + 12, 28, 28, 0xFFFFFFFF);
 			regions.add(bx, ly + 14, 24, 24, () -> {
 				cfg.hud.accentColor = color;
 				cfg.save();
