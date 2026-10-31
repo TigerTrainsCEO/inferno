@@ -46,7 +46,7 @@ public final class HudEditScreen extends Screen {
 			int[] b = ClientHud.bounds(id);
 			if (b == null) continue;
 			boolean over = Ui.hover(mouseX, mouseY, b[0], b[1], b[2], b[3]) || id.equals(dragId);
-			ctx.drawBorder(b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, over ? Theme.accent() : Theme.alpha(Theme.accent(), 110));
+			Ui.border(ctx, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, over ? Theme.accent() : Theme.alpha(Theme.accent(), 110));
 			Ui.shadow(ctx, label(id), b[0], b[1] - 12, over ? Theme.TEXT : Theme.MUTED);
 		}
 
