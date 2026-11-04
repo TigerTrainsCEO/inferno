@@ -5,14 +5,19 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { diagnose, type Finding, type Fix } from '@/features/pvp/crash-doctor'
+import { disableModById, loadProblemText } from '@/features/pvp/doctor-io'
 import { installPvpProfile, type InstallResult, type InstallStage } from '@/features/pvp/installer'
 import {
+	PVP_PROFILES,
 	type PvpGameVersion,
 	type PvpProfile,
 	profilesForVersion,
 } from '@/features/pvp/profiles'
 import { createTauriInstallerDeps } from '@/features/pvp/tauri-deps'
-import { run } from '@/helpers/instance'
+import { planTuning } from '@/features/pvp/tune'
+import { edit, get as getInstance, run } from '@/helpers/instance'
+import { maxMemoryQueryOptions } from '@/helpers/jre'
 import { instanceKeys, instanceListQueryOptions } from '@/pages/instance/query-options'
 import { injectAppEvents } from '@/providers/app-events'
 import { useRootBreadcrumb } from '@/shared/breadcrumbs'
@@ -98,8 +103,10 @@ function stageText(stage: InstallStage): Busy {
 				stage: `Installing ${stage.label} (${stage.index}/${stage.total})`,
 				pct: 8 + Math.round(((stage.index - 1) / Math.max(stage.total, 1)) * 82),
 			}
+		case 'tuning':
+			return { stage: 'Tuning Java for low latency…', pct: 92 }
 		case 'inferno':
-			return { stage: 'Adding Inferno Client…', pct: 94 }
+			return { stage: 'Adding Inferno Client…', pct: 96 }
 		case 'done':
 			return { stage: 'Done', pct: 100 }
 	}
@@ -162,6 +169,108 @@ function openProfile(profile: PvpProfile) {
 
 function skippedFor(profile: PvpProfile) {
 	return (results[profile.id]?.outcomes ?? []).filter((o) => o.status === 'skipped')
+}
+
+const memoryQuery = useQuery(maxMemoryQueryOptions())
+const systemMemoryMb = computed(() => Math.floor((memoryQuery.data.value ?? 0) / 1024))
+
+type Doctor = { busy: boolean; findings: Finding[] | null; fixed: Record<string, boolean> }
+const doctor = reactive<Record<string, Doctor | undefined>>({})
+
+async function runDoctor(profile: PvpProfile) {
+	const id = instanceFor(profile)
+	if (!id) return
+	doctor[profile.id] = { busy: true, findings: null, fixed: {} }
+	try {
+		const instance = await getInstance(id)
+		const text = await loadProblemText(id)
+		doctor[profile.id] = {
+			busy: false,
+			fixed: {},
+			findings: diagnose(text, {
+				memoryMb: instance?.memory?.maximum ?? profile.memoryMb,
+				systemMemoryMb: systemMemoryMb.value || 16384,
+			}),
+		}
+	} catch (e) {
+		doctor[profile.id] = undefined
+		handleError(e as Error)
+	}
+}
+
+async function applyFix(profile: PvpProfile, finding: Finding, fix: Fix) {
+	const id = instanceFor(profile)
+	const state = doctor[profile.id]
+	if (!id || !state) return
+	try {
+		if (fix.kind === 'memory') {
+			await edit(id, { memory: { maximum: fix.memoryMb } })
+		} else {
+			await disableModById(id, fix.modId)
+			await queryClient.invalidateQueries({ queryKey: instanceKeys.list() })
+		}
+		state.fixed[finding.id + fix.label] = true
+		addNotification({
+			type: 'success',
+			title: 'Fix applied',
+			text: `${fix.label}. Try launching ${profile.name} again.`,
+		})
+	} catch (e) {
+		handleError(e as Error)
+	}
+}
+
+const tuning = ref(false)
+const tuneNote = ref('')
+
+async function tuneMyPc() {
+	if (tuning.value) return
+	tuning.value = true
+	try {
+		const totalMemoryMb = systemMemoryMb.value
+		if (!totalMemoryMb) throw new Error('Could not read how much memory your computer has')
+		const hardware = { totalMemoryMb, threads: navigator.hardwareConcurrency || 4 }
+
+		const entries = []
+		for (const profile of PVP_PROFILES) {
+			const id = instanceFor(profile)
+			if (!id) continue
+			const instance = await getInstance(id)
+			entries.push({
+				id,
+				name: profile.name,
+				baselineMb: profile.memoryMb,
+				currentMb: instance?.memory?.maximum ?? profile.memoryMb,
+			})
+		}
+
+		const result = planTuning(hardware, entries)
+		tuneNote.value = result.summary
+		if (!entries.length) {
+			addNotification({
+				type: 'info',
+				title: 'Nothing to tune yet',
+				text: 'Build a profile first, then tune it for your PC.',
+			})
+			return
+		}
+
+		const changes = result.plans.filter((p) => p.changed)
+		for (const plan of changes) {
+			await edit(plan.id, { memory: { maximum: plan.recommendedMb } })
+		}
+		addNotification({
+			type: 'success',
+			title: changes.length ? `Tuned ${changes.length} profile${changes.length > 1 ? 's' : ''}` : 'Already tuned',
+			text: changes.length
+				? changes.map((p) => `${p.name}: ${p.currentMb} to ${p.recommendedMb} MB`).join('. ')
+				: 'Your profiles already fit this computer.',
+		})
+	} catch (e) {
+		handleError(e as Error)
+	} finally {
+		tuning.value = false
+	}
 }
 </script>
 
@@ -289,6 +398,32 @@ function skippedFor(profile: PvpProfile) {
 					</template>
 					<template v-else>
 						<button class="btn btn-build" @click="build(p)"><DownloadIcon /> Build profile</button>
+					</template>
+				</div>
+
+				<div v-if="doctor[p.id]" class="doctor">
+					<p v-if="doctor[p.id]!.busy" class="doctor-line"><SpinnerIcon class="spin" /> Reading your logs…</p>
+					<template v-else>
+						<p v-if="!doctor[p.id]!.findings?.length" class="doctor-line doctor-ok">
+							<CheckIcon /> No problems found in the latest log.
+						</p>
+						<ul v-else class="doctor-list">
+							<li v-for="f in doctor[p.id]!.findings" :key="f.id" class="finding" :class="f.severity">
+								<strong>{{ f.title }}</strong>
+								<span>{{ f.detail }}</span>
+								<div v-if="f.fixes.length" class="fixes">
+									<button
+										v-for="fx in f.fixes"
+										:key="fx.label"
+										class="btn-fix"
+										:disabled="doctor[p.id]!.fixed[f.id + fx.label]"
+										@click="applyFix(p, f, fx)"
+									>
+										{{ doctor[p.id]!.fixed[f.id + fx.label] ? 'Applied' : fx.label }}
+									</button>
+								</div>
+							</li>
+						</ul>
 					</template>
 				</div>
 			</article>
@@ -697,6 +832,85 @@ function skippedFor(profile: PvpProfile) {
 @keyframes spin {
 	to {
 		transform: rotate(360deg);
+	}
+}
+.tune {
+	height: 2.2rem;
+}
+.tune-note {
+	flex-basis: 100%;
+}
+.doctor {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0.7rem 0.8rem;
+	border-radius: var(--radius-md);
+	background: var(--surface-1-5);
+	border: 1px solid var(--surface-5);
+}
+.doctor-line {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--color-base);
+	svg {
+		width: 1rem;
+		height: 1rem;
+		flex: none;
+	}
+}
+.doctor-ok {
+	color: var(--color-green);
+}
+.doctor-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.7rem;
+}
+.finding {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	padding-left: 0.65rem;
+	border-left: 3px solid var(--color-orange);
+	font-size: 0.82rem;
+	color: var(--color-secondary);
+	strong {
+		font-size: 0.9rem;
+		color: var(--color-contrast);
+	}
+	&.error {
+		border-left-color: var(--color-red);
+	}
+	&.info {
+		border-left-color: var(--surface-5);
+	}
+}
+.fixes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin-top: 0.35rem;
+}
+.btn-fix {
+	border: 0;
+	cursor: pointer;
+	padding: 0.35rem 0.7rem;
+	border-radius: var(--radius-sm);
+	font-weight: 700;
+	font-size: 0.8rem;
+	color: #fff;
+	background: linear-gradient(180deg, #ff6a2f, #e8460e);
+	&:disabled {
+		cursor: default;
+		background: var(--surface-4);
+		color: var(--color-green);
 	}
 }
 .foot {

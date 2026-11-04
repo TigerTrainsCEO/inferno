@@ -1,11 +1,13 @@
 package com.infernoclient;
 
 import com.infernoclient.config.ClientConfig;
+import com.infernoclient.config.SettingsSync;
 import com.infernoclient.feature.ClientFeatures;
 import com.infernoclient.feature.ElytraSwapper;
 import com.infernoclient.feature.PerspectiveController;
 import com.infernoclient.feature.TooltipFeatures;
 import com.infernoclient.hud.ClientHud;
+import com.infernoclient.hud.CrosshairRenderer;
 import com.infernoclient.screen.InfernoHomeScreen;
 import com.infernoclient.screen.InfernoMenuScreen;
 import net.fabricmc.api.ClientModInitializer;
@@ -39,6 +41,7 @@ public final class InfernoClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		config = ClientConfig.load();
+		SettingsSync.pull(config);
 		config.save();
 		features = new ClientFeatures(config);
 
@@ -49,6 +52,7 @@ public final class InfernoClient implements ClientModInitializer {
 		elytraSwapKey = register("key.inferno_client.elytra_swap", 71, category);
 
 		ClientHud.register(config);
+		CrosshairRenderer.register(config);
 		TooltipFeatures.register(config);
 		ClientTickEvents.END_CLIENT_TICK.register(InfernoClient::onTick);
 		LOGGER.info("Inferno Client {} loaded", VERSION);

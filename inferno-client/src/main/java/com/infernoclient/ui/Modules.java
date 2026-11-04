@@ -75,6 +75,10 @@ public final class Modules {
 			new Slider("Lowering", 0.05, 0.6, () -> c.visual.lowFireAmount, v -> c.visual.lowFireAmount = v, "%.2f")));
 		list.add(m("lowShield", "Low Shield", "Visual", "Lowers your held shield.", () -> c.visual.lowShield, v -> c.visual.lowShield = v,
 			new Slider("Lowering", 0.05, 0.5, () -> c.visual.lowShieldAmount, v -> c.visual.lowShieldAmount = v, "%.2f")));
+		list.add(m("adaptiveRenderDistance", "Adaptive Render Distance", "Visual", "Raises or lowers render distance to hold your target FPS.", () -> c.performance.adaptiveRenderDistance, v -> c.performance.adaptiveRenderDistance = v,
+			new Slider("Target FPS", 30, 360, () -> c.performance.targetFps, v -> c.performance.targetFps = (int) Math.round(v), "%.0f"),
+			new Slider("Minimum distance", 2, 32, () -> c.performance.minDistance, v -> c.performance.minDistance = (int) Math.round(v), "%.0f"),
+			new Slider("Maximum distance", 2, 32, () -> c.performance.maxDistance, v -> c.performance.maxDistance = (int) Math.round(v), "%.0f")));
 		list.add(m("shulkerTooltips", "Container Tooltips", "Visual", "Shows shulker box contents in tooltips.", () -> c.social.shulkerTooltips, v -> c.social.shulkerTooltips = v));
 
 		list.add(m("highlightFriends", "Friend Highlight", "Social", "Marks friends in the player list.", () -> c.social.highlightFriends, v -> c.social.highlightFriends = v));

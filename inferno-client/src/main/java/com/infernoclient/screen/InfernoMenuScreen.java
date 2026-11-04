@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class InfernoMenuScreen extends Screen {
-	private static final String[] TABS = {"Favorites", "HUD", "Gameplay", "Visual", "Social", "Friends", "Appearance"};
+	private static final String[] TABS = {"Favorites", "HUD", "Gameplay", "Visual", "Crosshair", "Social", "Friends", "Appearance"};
 	private static final String[] THEMES = {"inferno", "glass", "minimal"};
 	private static final int[] ACCENTS = {0xFF5A1F, 0xFF8A1F, 0xFFC247, 0xE8431A, 0x4FA3FF, 0x5BD68A, 0xC05BFF, 0xF2F2F2};
 	private static String tab = "HUD";
@@ -129,6 +129,8 @@ public final class InfernoMenuScreen extends Screen {
 
 		if (tab.equals("Friends")) {
 			renderFriends(ctx, cx, py + 14, cw, ph - 28, mouseX, mouseY);
+		} else if (tab.equals("Crosshair")) {
+			renderCrosshair(ctx, cx, py + 14, cw, ph - 28, mouseX, mouseY);
 		} else if (tab.equals("Appearance")) {
 			renderAppearance(ctx, cx, py + 14, cw, ph - 28, mouseX, mouseY);
 		} else {
@@ -252,6 +254,115 @@ public final class InfernoMenuScreen extends Screen {
 		}
 	}
 
+	private static final String[] SHAPES = {"cross", "dot", "circle", "square"};
+	private static final int[] CROSSHAIR_COLORS = {0xFFFFFF, 0xFF4040, 0xFF8A1F, 0xFFD23F, 0x5BD68A, 0x40E0FF, 0x4FA3FF, 0xC05BFF};
+
+	private void renderCrosshair(DrawContext ctx, int x, int y, int w, int h, int mx, int my) {
+		ClientConfig.Crosshair c = cfg.crosshair;
+		Ui.scaled(ctx, "Crosshair", x, y, Theme.TEXT, 1.5f, false);
+
+		int top = y + 30;
+		int viewH = h - 30;
+		int contentH = 0;
+		int base = top - scroll;
+		int ly = base;
+
+		ctx.enableScissor(x, top, x + w, top + viewH);
+
+		int previewH = 100;
+		Ui.round(ctx, x, ly, w, previewH, 0xFF0A0807);
+		for (int i = 0; i < w; i += 16) {
+			ctx.fill(x + i, ly + 1, x + i + 1, ly + previewH - 1, 0xFF14100E);
+		}
+		for (int i = 0; i < previewH; i += 16) {
+			ctx.fill(x + 1, ly + i, x + w - 1, ly + i + 1, 0xFF14100E);
+		}
+		int pcx = x + w / 2;
+		int pcy = ly + previewH / 2;
+		com.infernoclient.hud.CrosshairRenderer.draw(ctx, c, pcx, pcy);
+		ly += previewH + 12;
+
+		Ui.text(ctx, "Shape", x, ly, Theme.MUTED);
+		int bx = x;
+		int bw = Math.max(48, Math.min(84, (w - 18) / 4));
+		for (String shape : SHAPES) {
+			boolean on = shape.equals(c.shape);
+			String label = Character.toUpperCase(shape.charAt(0)) + shape.substring(1);
+			if (ly + 14 >= top && ly + 34 <= top + viewH) {
+				Ui.button(ctx, regions, label, bx, ly + 14, bw, 20, mx, my, on, () -> {
+					c.shape = shape;
+					cfg.save();
+				});
+			} else {
+				Ui.button(ctx, new Ui.Regions(), label, bx, ly + 14, bw, 20, -1, -1, on, () -> {
+				});
+			}
+			bx += bw + 6;
+		}
+		ly += 46;
+
+		String[] labels = {"Use custom crosshair", "Outline", "Center dot", "Same crosshair in every profile"};
+		boolean[] values = {c.enabled, c.outline, c.centerDot, cfg.sync.crosshair};
+		Runnable[] actions = {
+			() -> c.enabled = !c.enabled,
+			() -> c.outline = !c.outline,
+			() -> c.centerDot = !c.centerDot,
+			() -> cfg.sync.crosshair = !cfg.sync.crosshair,
+		};
+		for (int i = 0; i < labels.length; i++) {
+			Ui.text(ctx, labels[i], x, ly + 2, Theme.TEXT);
+			boolean visible = ly >= top && ly + 14 <= top + viewH;
+			final Runnable action = actions[i];
+			Ui.toggle(ctx, visible ? regions : new Ui.Regions(), x + w - 30, ly, values[i], () -> {
+				action.run();
+				cfg.save();
+			});
+			ly += 22;
+		}
+		ly += 8;
+
+		Object[][] sliders = {
+			{"Length", 1, 30, (java.util.function.DoubleSupplier) () -> c.length, (java.util.function.DoubleConsumer) v -> c.length = (int) Math.round(v), "%.0f"},
+			{"Thickness", 1, 8, (java.util.function.DoubleSupplier) () -> c.thickness, (java.util.function.DoubleConsumer) v -> c.thickness = (int) Math.round(v), "%.0f"},
+			{"Gap", 0, 20, (java.util.function.DoubleSupplier) () -> c.gap, (java.util.function.DoubleConsumer) v -> c.gap = (int) Math.round(v), "%.0f"},
+			{"Outline size", 0, 4, (java.util.function.DoubleSupplier) () -> c.outlineThickness, (java.util.function.DoubleConsumer) v -> c.outlineThickness = (int) Math.round(v), "%.0f"},
+			{"Dot size", 1, 8, (java.util.function.DoubleSupplier) () -> c.dotSize, (java.util.function.DoubleConsumer) v -> c.dotSize = (int) Math.round(v), "%.0f"},
+			{"Opacity", 0.1, 1.0, (java.util.function.DoubleSupplier) () -> c.opacity, (java.util.function.DoubleConsumer) v -> c.opacity = v, "%.2f"},
+			{"Red", 0, 255, (java.util.function.DoubleSupplier) () -> c.color >> 16 & 255, (java.util.function.DoubleConsumer) v -> c.color = (c.color & 0x00FFFF) | ((int) Math.round(v) << 16), "%.0f"},
+			{"Green", 0, 255, (java.util.function.DoubleSupplier) () -> c.color >> 8 & 255, (java.util.function.DoubleConsumer) v -> c.color = (c.color & 0xFF00FF) | ((int) Math.round(v) << 8), "%.0f"},
+			{"Blue", 0, 255, (java.util.function.DoubleSupplier) () -> c.color & 255, (java.util.function.DoubleConsumer) v -> c.color = (c.color & 0xFFFF00) | (int) Math.round(v), "%.0f"},
+		};
+		for (Object[] row : sliders) {
+			boolean visible = ly >= top && ly + 30 <= top + viewH;
+			Ui.slider(ctx, visible ? regions : new Ui.Regions(), (String) row[0], x, ly, w - 8,
+				((java.util.function.DoubleSupplier) row[3]).getAsDouble(),
+				((Number) row[1]).doubleValue(), ((Number) row[2]).doubleValue(), (String) row[5],
+				(java.util.function.DoubleConsumer) row[4]);
+			ly += 34;
+		}
+
+		Ui.text(ctx, "Quick colors", x, ly, Theme.MUTED);
+		int sx = x;
+		for (int color : CROSSHAIR_COLORS) {
+			Ui.round(ctx, sx, ly + 14, 22, 22, 0xFF000000 | color);
+			if ((c.color & 0xFFFFFF) == color) {
+				Ui.border(ctx, sx - 2, ly + 12, 26, 26, 0xFFFFFFFF);
+			}
+			boolean visible = ly >= top && ly + 38 <= top + viewH;
+			(visible ? regions : new Ui.Regions()).add(sx, ly + 14, 22, 22, () -> {
+				c.color = color;
+				cfg.save();
+			});
+			sx += 30;
+		}
+		ly += 46;
+
+		contentH = ly - base;
+		ctx.disableScissor();
+		maxScroll = Math.max(0, contentH - viewH);
+		scroll = Math.max(0, Math.min(maxScroll, scroll));
+	}
+
 	private void renderAppearance(DrawContext ctx, int x, int y, int w, int h, int mx, int my) {
 		Ui.scaled(ctx, "Appearance", x, y, Theme.TEXT, 1.5f, false);
 
@@ -288,7 +399,16 @@ public final class InfernoMenuScreen extends Screen {
 			cfg.save();
 		});
 
-		ly += 30;
+		ly += 26;
+		Ui.text(ctx, "Share HUD layout between profiles", x, ly + 2, Theme.TEXT);
+		Ui.toggle(ctx, regions, x + 230, ly, cfg.sync.hud, () -> {
+			cfg.sync.hud = !cfg.sync.hud;
+			cfg.save();
+		});
+		ly += 20;
+		Ui.text(ctx, "Keybinds and video settings are synced by the launcher.", x, ly, Theme.MUTED);
+
+		ly += 26;
 		if (client.world != null) {
 			Ui.button(ctx, regions, "Edit HUD layout", x, ly, 130, 22, mx, my, true, () -> client.setScreen(new HudEditScreen(cfg, this)));
 		} else {

@@ -30,6 +30,9 @@ public final class ClientConfig {
 	public Social social = new Social();
 	public Home home = new Home();
 	public Ui ui = new Ui();
+	public Crosshair crosshair = new Crosshair();
+	public Sync sync = new Sync();
+	public Performance performance = new Performance();
 
 	public static final class Hud {
 		public boolean fps = true;
@@ -160,6 +163,37 @@ public final class ClientConfig {
 		public List<String> favoriteModules = new ArrayList<>();
 	}
 
+	public static final class Crosshair {
+		public boolean enabled = false;
+		/** One of: cross, dot, circle, square. */
+		public String shape = "cross";
+		public int length = 5;
+		public int thickness = 1;
+		public int gap = 2;
+		public boolean outline = true;
+		public int outlineThickness = 1;
+		public int color = 0xFFFFFF;
+		public int outlineColor = 0x000000;
+		public double opacity = 1.0;
+		public boolean centerDot = false;
+		public int dotSize = 1;
+	}
+
+	public static final class Sync {
+		public boolean enabled = true;
+		/** Share HUD layout and style between every Inferno profile on this computer. */
+		public boolean hud = true;
+		/** Share the crosshair between profiles. Turn off to keep one crosshair per profile. */
+		public boolean crosshair = true;
+	}
+
+	public static final class Performance {
+		public boolean adaptiveRenderDistance = false;
+		public int targetFps = 120;
+		public int minDistance = 6;
+		public int maxDistance = 16;
+	}
+
 	private static Path path() {
 		return FabricLoader.getInstance().getConfigDir().resolve("inferno_client.json");
 	}
@@ -186,7 +220,7 @@ public final class ClientConfig {
 	}
 
 	/** Fills anything missing (older files) and clamps values to safe ranges. */
-	private void normalize() {
+	public void normalize() {
 		if (hud == null) hud = new Hud();
 		if (zoom == null) zoom = new Zoom();
 		if (movement == null) movement = new Movement();
@@ -195,6 +229,9 @@ public final class ClientConfig {
 		if (social == null) social = new Social();
 		if (home == null) home = new Home();
 		if (ui == null) ui = new Ui();
+		if (crosshair == null) crosshair = new Crosshair();
+		if (sync == null) sync = new Sync();
+		if (performance == null) performance = new Performance();
 		if (social.friends == null) social.friends = new ArrayList<>();
 		if (social.friendEntries == null) social.friendEntries = new ArrayList<>();
 		if (ui.favoriteModules == null) ui.favoriteModules = new ArrayList<>();
@@ -219,6 +256,22 @@ public final class ClientConfig {
 		visual.lowFireAmount = clamp(visual.lowFireAmount, 0.05, 0.6);
 		visual.lowShieldAmount = clamp(visual.lowShieldAmount, 0.05, 0.5);
 		movement.autoRespawnDelay = (int) clamp(movement.autoRespawnDelay, 0, 100);
+
+		if (crosshair.shape == null || !List.of("cross", "dot", "circle", "square").contains(crosshair.shape)) {
+			crosshair.shape = "cross";
+		}
+		crosshair.length = (int) clamp(crosshair.length, 1, 30);
+		crosshair.thickness = (int) clamp(crosshair.thickness, 1, 8);
+		crosshair.gap = (int) clamp(crosshair.gap, 0, 20);
+		crosshair.outlineThickness = (int) clamp(crosshair.outlineThickness, 0, 4);
+		crosshair.dotSize = (int) clamp(crosshair.dotSize, 1, 8);
+		crosshair.opacity = clamp(crosshair.opacity, 0.1, 1.0);
+		crosshair.color &= 0xFFFFFF;
+		crosshair.outlineColor &= 0xFFFFFF;
+
+		performance.targetFps = (int) clamp(performance.targetFps, 30, 360);
+		performance.minDistance = (int) clamp(performance.minDistance, 2, 32);
+		performance.maxDistance = (int) clamp(performance.maxDistance, performance.minDistance, 32);
 	}
 
 	public void save() {
@@ -236,7 +289,9 @@ public final class ClientConfig {
 			}
 		} catch (IOException e) {
 			InfernoClient.LOGGER.error("Could not save Inferno Client config at {}", file, e);
+			return;
 		}
+		SettingsSync.push(this);
 	}
 
 	public static double clamp(double value, double min, double max) {

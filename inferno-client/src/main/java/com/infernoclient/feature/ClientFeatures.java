@@ -11,6 +11,10 @@ public final class ClientFeatures {
 	private final ClientConfig config;
 	private int deadTicks;
 	private boolean sprintForced;
+	private int adaptTicks;
+	private int adaptCooldown;
+	private long fpsSum;
+	private int fpsSamples;
 
 	public ClientFeatures(ClientConfig config) {
 		this.config = config;
@@ -21,10 +25,56 @@ public final class ClientFeatures {
 		if (player == null) {
 			deadTicks = 0;
 			sprintForced = false;
+			adaptTicks = 0;
+			fpsSum = 0;
+			fpsSamples = 0;
 			return;
 		}
 		tickAutoRespawn(client, player);
 		tickToggleSprint(client, player);
+		tickAdaptiveRenderDistance(client);
+	}
+
+	/**
+	 * Keeps frame rate near a target by nudging render distance. It samples FPS once a second, looks at
+	 * five seconds at a time, and waits after each change so chunk reloads do not skew the next reading.
+	 */
+	private void tickAdaptiveRenderDistance(MinecraftClient client) {
+		ClientConfig.Performance perf = config.performance;
+		if (!perf.adaptiveRenderDistance || client.currentScreen != null) {
+			adaptTicks = 0;
+			fpsSum = 0;
+			fpsSamples = 0;
+			return;
+		}
+		if (adaptCooldown > 0) {
+			adaptCooldown--;
+			return;
+		}
+		adaptTicks++;
+		if (adaptTicks % 20 == 0) {
+			fpsSum += client.getCurrentFps();
+			fpsSamples++;
+		}
+		if (adaptTicks < 100 || fpsSamples == 0) {
+			return;
+		}
+		double average = (double) fpsSum / fpsSamples;
+		adaptTicks = 0;
+		fpsSum = 0;
+		fpsSamples = 0;
+
+		int current = client.options.getViewDistance().getValue();
+		int next = current;
+		if (average < perf.targetFps * 0.9 && current > perf.minDistance) {
+			next = current - 1;
+		} else if (average > perf.targetFps * 1.4 && current < perf.maxDistance) {
+			next = current + 1;
+		}
+		if (next != current) {
+			client.options.getViewDistance().setValue(next);
+			adaptCooldown = 200;
+		}
 	}
 
 	/**

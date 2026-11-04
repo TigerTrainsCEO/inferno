@@ -48,8 +48,8 @@ jobs:
         shell: bash
         run: |
           cd apps/app-frontend
-          npx --yes esbuild@0.27.2 tests/pvp.test.ts --bundle --platform=node --format=cjs --outfile=pvp.test.cjs --log-level=warning
-          node --test pvp.test.cjs
+          npx --yes esbuild@0.27.2 tests/pvp.test.ts tests/doctor.test.ts --bundle --platform=node --format=cjs --outdir=test-out --out-extension:.js=.cjs --log-level=warning
+          node --test test-out/pvp.test.cjs test-out/doctor.test.cjs
 
       - name: Build installer
         run: pnpm --filter @modrinth/app build
